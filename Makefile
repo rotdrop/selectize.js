@@ -9,6 +9,7 @@ test:
 compile:
 	rm -rf build
 	rm -rf dist
+	npm install
 	$(GRUNT) --plugins=$(plugins)
 release:
 ifeq ($(strip $(version)),)

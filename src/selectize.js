@@ -398,6 +398,9 @@ $.extend(Selectize.prototype, {
 					self.isOpen ? self.close() : self.open();
 				} else if (!defaultPrevented) {
 					self.setActiveItem(null);
+                                        if (!self.settings.openOnFocus) {
+					        self.isOpen ? self.close() : self.open();
+                                        }
 				}
 				return false;
 			}

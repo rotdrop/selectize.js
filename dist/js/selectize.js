@@ -423,7 +423,8 @@
 		var currentWidth = null;
 	
 		var update = function(e, options) {
-			var value, keyCode, printable, placeholder, width;
+			var value, keyCode, printable, width;
+			var placeholder, placeholderWidth;
 			var shift, character, selection;
 			e = e || window.event || {};
 			options = options || {};
@@ -461,11 +462,13 @@
 			}
 	
 			placeholder = $input.attr('placeholder');
-			if (!value && placeholder) {
-				value = placeholder;
+			if (placeholder) {
+				placeholderWidth = measureString(placeholder, $input) + 4;
+			} else {
+				placeholderWidth = 0;
 			}
 	
-			width = measureString(value, $input) + 4;
+			width = Math.max(measureString(value, $input), placeholderWidth) + 4;
 			if (width !== currentWidth) {
 				currentWidth = width;
 				$input.width(width);
@@ -540,6 +543,7 @@
 			currentResults   : null,
 			lastValue        : '',
 			lastValidValue   : '',
+			lastOpenTarget   : false,
 			caretPos         : 0,
 			loading          : 0,
 			loadedSearches   : {},
@@ -682,7 +686,9 @@
 			if ($input.attr('autocapitalize')) {
 				$control_input.attr('autocapitalize', $input.attr('autocapitalize'));
 			}
-			$control_input[0].type = $input[0].type;
+			if ($input.is('input')) {
+				$control_input[0].type = $input[0].type;
+			}
 	
 			self.$wrapper          = $wrapper;
 			self.$control          = $control;
@@ -702,7 +708,11 @@
 			});
 	
 			$control_input.on({
-				mousedown : function(e) { e.stopPropagation(); },
+				mousedown : function(e) {
+					if (self.$control_input.val() !== '' || self.settings.openOnFocus) {
+						e.stopPropagation();
+					}
+				},
 				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
 				keyup     : function() { return self.onKeyUp.apply(self, arguments); },
 				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
@@ -890,26 +900,39 @@
 			var defaultPrevented = e.isDefaultPrevented();
 			var $target = $(e.target);
 	
-			if (self.isFocused) {
-				// retain focus by preventing native handling. if the
-				// event target is the input it should not be modified.
-				// otherwise, text selection within the input won't work.
-				if (e.target !== self.$control_input[0]) {
-					if (self.settings.mode === 'single') {
-						// toggle dropdown
-						self.isOpen ? self.close() : self.open();
-					} else if (!defaultPrevented) {
-						self.setActiveItem(null);
-					}
-					return false;
-				}
-			} else {
+			if (!self.isFocused) {
 				// give control focus
 				if (!defaultPrevented) {
 					window.setTimeout(function() {
 						self.focus();
 					}, 0);
 				}
+			}
+			// retain focus by preventing native handling. if the
+			// event target is the input it should not be modified.
+			// otherwise, text selection within the input won't work.
+			if (e.target !== self.$control_input[0] || self.$control_input.val() === '') {
+				if (self.settings.mode === 'single') {
+					// toggle dropdown
+					self.isOpen ? self.close() : self.open();
+				} else {
+					if (!defaultPrevented) {
+							self.setActiveItem(null);
+					}
+					if (!self.settings.openOnFocus) {
+						if (self.isOpen && e.target === self.lastOpenTarget) {
+							self.close();
+							self.lastOpenTarget = false;
+						} else if (!self.isOpen) {
+							self.refreshOptions();
+							self.open();
+							self.lastOpenTarget = e.target;
+						} else {
+							self.lastOpenTarget = e.target;
+						}
+					}
+				}
+				return false;
 			}
 		},
 	
@@ -1318,6 +1341,11 @@
 		 * @param {mixed} value
 		 */
 		setValue: function(value, silent) {
+			const items = Array.isArray(value) ? value : [value];
+			if (items.join('') === this.items.join('')) {
+				return;
+			}
+	
 			var events = silent ? [] : ['change'];
 	
 			debounce_events(this, events, function() {
@@ -1444,6 +1472,15 @@
 				}
 	
 			}
+		},
+	
+		/**
+		 * Deselects all items.
+		 */
+		deselectAll: function() {
+			var self = this;
+			self.$activeItems = [];
+			self.$control.children(':not(input)').removeClass('active');
 		},
 	
 		/**
@@ -2047,7 +2084,7 @@
 		 * "Selects" multiple items at once. Adds them to the list
 		 * at the current caret position.
 		 *
-		 * @param {string} value
+		 * @param {string} values
 		 * @param {boolean} silent
 		 */
 		addItems: function(values, silent) {
@@ -2246,15 +2283,15 @@
 		/**
 		 * Re-renders the selected item lists.
 		 */
-		refreshItems: function() {
+		refreshItems: function(silent) {
 			this.lastQuery = null;
 	
 			if (this.isSetup) {
-				this.addItem(this.items);
+				this.addItem(this.items, silent);
 			}
 	
 			this.refreshState();
-			this.updateOriginalInput();
+			this.updateOriginalInput({silent: silent});
 		},
 	
 		/**
@@ -3057,6 +3094,7 @@
 			}
 	
 			instance = new Selectize($input, $.extend(true, {}, defaults, settings_element, settings_user));
+			instance.settings_user = settings_user;
 		});
 	};
 	
@@ -3064,6 +3102,43 @@
 	$.fn.selectize.support = {
 		validity: SUPPORTS_VALIDITY_API
 	};
+	
+	
+	Selectize.define("auto_position", function () {
+	  var self = this;
+	
+	  const POSITION = {
+	    top: 'top',
+	    bottom: 'bottom',
+	  };
+	
+	  self.positionDropdown = (function() {
+	    return function() {
+	      const $control = this.$control;
+	      const offset = this.settings.dropdownParent === 'body' ? $control.offset() : $control.position();
+	      offset.top += $control.outerHeight(true);
+	
+	      const dropdownHeight = this.$dropdown.prop('scrollHeight') + 5; // 5 - padding value;
+	      const controlPosTop = this.$control.get(0).getBoundingClientRect().top;
+	      const wrapperHeight = this.$wrapper.height();
+	      const position = controlPosTop + dropdownHeight + wrapperHeight  > window.innerHeight ? POSITION.top : POSITION.bottom;
+	      const styles = {
+	        width: $control.outerWidth(),
+	        left: offset.left
+	      };
+	
+	      if (position === POSITION.top) {
+	        Object.assign(styles, {bottom: offset.top, top: 'unset', margin: '0 0 5px 0'});
+	        this.$dropdown.addClass('selectize-position-top');
+	      } else {
+	        Object.assign(styles, {top: offset.top, bottom: 'unset', margin: '5px 0 0 0'});
+	        this.$dropdown.removeClass('selectize-position-top');
+	      }
+	
+	      this.$dropdown.css(styles);
+	    }
+	  }());
+	});
 	
 	
 	Selectize.define('auto_select_on_type', function(options) {
@@ -3132,23 +3207,29 @@
 					disabled: self.isLocked,
 					start: function(e, ui) {
 						ui.placeholder.css('width', ui.helper.css('width'));
-						$control.css({overflow: 'visible'});
+						// $control.css({overflow: 'visible'});
+						$control.addClass('dragging');
 					},
 					stop: function() {
-						$control.css({overflow: 'hidden'});
+						// $control.css({overflow: 'hidden'});
+						$control.removeClass('dragging');
 						var active = self.$activeItems ? self.$activeItems.slice() : null;
 						var values = [];
 						$control.children('[data-value]').each(function() {
 							values.push($(this).attr('data-value'));
 						});
+						self.isFocused = false;
 						self.setValue(values);
+						self.isFocused = true;
 						self.setActiveItem(active);
+						self.positionDropdown();
 					}
 				});
 			};
 		})();
 	
 	});
+	
 	
 	Selectize.define('dropdown_header', function(options) {
 		var self = this;

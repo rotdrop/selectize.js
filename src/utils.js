@@ -325,7 +325,6 @@ var autoGrow = function($input) {
 		} else {
 			placeholderWidth = 0;
 		}
-		console.info('PLACEHOLDER', placeholder, placeholderWidth);
 
 		width = Math.max(measureString(value, $input), placeholderWidth) + 4;
 		if (width !== currentWidth) {

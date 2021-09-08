@@ -38,6 +38,7 @@ var Selectize = function($input, settings) {
 		currentResults   : null,
 		lastValue        : '',
 		lastValidValue   : '',
+		lastOpenTarget   : false,
 		caretPos         : 0,
 		loading          : 0,
 		loadedSearches   : {},
@@ -396,11 +397,22 @@ $.extend(Selectize.prototype, {
 				if (self.settings.mode === 'single') {
 					// toggle dropdown
 					self.isOpen ? self.close() : self.open();
-				} else if (!defaultPrevented) {
-					self.setActiveItem(null);
-                                        if (!self.settings.openOnFocus) {
-					        self.isOpen ? self.close() : self.open();
-                                        }
+				} else {
+					if (!defaultPrevented) {
+						self.setActiveItem(null);
+					}
+					if (!self.settings.openOnFocus) {
+						if (self.isOpen && e.target === self.lastOpenTarget) {
+							self.close();
+							self.lastOpenTarget = false;
+						} else if (!self.isOpen) {
+							self.refreshOptions();
+							self.open();
+							self.lastOpenTarget = e.target;
+						} else {
+							self.lastOpenTarget = e.target;
+						}
+					}
 				}
 				return false;
 			}

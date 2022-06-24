@@ -2,6 +2,7 @@
 plugins=*
 GRUNT=node_modules/.bin/grunt
 CURRENT_VERSION := $(shell sed -n '/"version":/{s/.*"version": "\([^"]*\)".*/\1/p;q}' package.json)
+export OPENSSL_CONF = /etc/ssl
 
 all: compile test
 test:

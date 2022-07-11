@@ -657,9 +657,9 @@
 
 (function(root, factory) {
 	if (typeof define === 'function' && define.amd) {
-		define('selectize', ['jquery','sifter','microplugin'], factory);
+		define('selectize', ['jquery','@selectize/sifter','microplugin'], factory);
 	} else if (typeof module === 'object' && typeof module.exports === 'object') {
-		module.exports = factory(require('jquery'), require('sifter'), require('microplugin'));
+		module.exports = factory(require('jquery'), require('@selectize/sifter'), require('microplugin'));
 	} else {
 		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
 	}
@@ -1187,6 +1187,7 @@
 			currentResults   : null,
 			lastValue        : '',
 			lastValidValue   : '',
+			lastOpenTarget   : false,
 			caretPos         : 0,
 			loading          : 0,
 			loadedSearches   : {},
@@ -1351,7 +1352,11 @@
 			});
 	
 			$control_input.on({
-				mousedown : function(e) { e.stopPropagation(); },
+				mousedown : function(e) {
+					if (self.$control_input.val() !== '' || self.settings.openOnFocus) {
+						e.stopPropagation();
+					}
+				},
 				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
 				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
 				input     : function() { return self.onInput.apply(self, arguments); },
@@ -1539,26 +1544,39 @@
 			var defaultPrevented = e.isDefaultPrevented();
 			var $target = $(e.target);
 	
-			if (self.isFocused) {
-				// retain focus by preventing native handling. if the
-				// event target is the input it should not be modified.
-				// otherwise, text selection within the input won't work.
-				if (e.target !== self.$control_input[0]) {
-					if (self.settings.mode === 'single') {
-						// toggle dropdown
-						self.isOpen ? self.close() : self.open();
-					} else if (!defaultPrevented) {
-						self.setActiveItem(null);
-					}
-					return false;
-				}
-			} else {
+			if (!self.isFocused) {
 				// give control focus
 				if (!defaultPrevented) {
 					window.setTimeout(function() {
 						self.focus();
 					}, 0);
 				}
+			}
+			// retain focus by preventing native handling. if the
+			// event target is the input it should not be modified.
+			// otherwise, text selection within the input won't work.
+			if (e.target !== self.$control_input[0] || self.$control_input.val() === '') {
+				if (self.settings.mode === 'single') {
+					// toggle dropdown
+					self.isOpen ? self.close() : self.open();
+				} else {
+					if (!defaultPrevented) {
+							self.setActiveItem(null);
+					}
+					if (!self.settings.openOnFocus) {
+						if (self.isOpen && e.target === self.lastOpenTarget) {
+							self.close();
+							self.lastOpenTarget = false;
+						} else if (!self.isOpen) {
+							self.refreshOptions();
+							self.open();
+							self.lastOpenTarget = e.target;
+						} else {
+							self.lastOpenTarget = e.target;
+						}
+					}
+				}
+				return false;
 			}
 		},
 	
@@ -1966,6 +1984,11 @@
 		 * @param {mixed} value
 		 */
 		setValue: function(value, silent) {
+			const items = Array.isArray(value) ? value : [value];
+			if (items.join('') === this.items.join('')) {
+				return;
+			}
+	
 			var events = silent ? [] : ['change'];
 	
 			debounce_events(this, events, function() {
@@ -2695,7 +2718,7 @@
 		 * "Selects" multiple items at once. Adds them to the list
 		 * at the current caret position.
 		 *
-		 * @param {string} value
+		 * @param {string} values
 		 * @param {boolean} silent
 		 */
 		addItems: function(values, silent) {
@@ -2894,15 +2917,15 @@
 		/**
 		 * Re-renders the selected item lists.
 		 */
-		refreshItems: function() {
+		refreshItems: function(silent) {
 			this.lastQuery = null;
 	
 			if (this.isSetup) {
-				this.addItem(this.items);
+				this.addItem(this.items, silent);
 			}
 	
 			this.refreshState();
-			this.updateOriginalInput();
+			this.updateOriginalInput({silent: silent});
 		},
 	
 		/**

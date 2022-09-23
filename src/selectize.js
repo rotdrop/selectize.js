@@ -1017,7 +1017,8 @@ $.extend(Selectize.prototype, {
 		var self = this;
 
 		self.setTextboxValue('');
-		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : 0});
+		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : -10000});
+		self.$control.css('margin-right', self.$control_input.width() + 'px');
 		self.isInputHidden = true;
 	},
 
@@ -1025,6 +1026,7 @@ $.extend(Selectize.prototype, {
 	 * Restores input visibility.
 	 */
 	showInput: function() {
+		this.$control.css('margin-right', '');
 		this.$control_input.css({opacity: 1, position: 'relative', left: 0});
 		this.isInputHidden = false;
 	},

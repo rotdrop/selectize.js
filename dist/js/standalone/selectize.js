@@ -657,9 +657,9 @@
 
 (function(root, factory) {
 	if (typeof define === 'function' && define.amd) {
-		define('selectize', ['jquery','sifter','microplugin'], factory);
+		define('selectize', ['jquery','@selectize/sifter','microplugin'], factory);
 	} else if (typeof module === 'object' && typeof module.exports === 'object') {
-		module.exports = factory(require('jquery'), require('sifter'), require('microplugin'));
+		module.exports = factory(require('jquery'), require('@selectize/sifter'), require('microplugin'));
 	} else {
 		root.Selectize = factory(root.jQuery, root.Sifter, root.MicroPlugin);
 	}
@@ -734,10 +734,10 @@
 			this._events[event].splice(this._events[event].indexOf(fct), 1);
 		},
 		trigger: function(event /* , args... */){
-			this._events = this._events || {};
-			if (event in this._events === false) return;
-			for (var i = 0; i < this._events[event].length; i++){
-				this._events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
+			const events = this._events = this._events || {};
+			if (event in events === false) return;
+			for (var i = 0; i < events[event].length; i++){
+				events[event][i].apply(this, Array.prototype.slice.call(arguments, 1));
 			}
 		}
 	};
@@ -755,6 +755,7 @@
 			destObject.prototype[props[i]] = MicroEvent.prototype[props[i]];
 		}
 	};
+	
 	
 	function uaDetect(platform, re) {
 	  if (navigator.userAgentData) {
@@ -1187,9 +1188,11 @@
 			currentResults   : null,
 			lastValue        : '',
 			lastValidValue   : '',
+			lastOpenTarget   : false,
 			caretPos         : 0,
 			loading          : 0,
 			loadedSearches   : {},
+	    isDropdownClosing: false,
 	
 			$activeOption    : null,
 			$activeItems     : [],
@@ -1284,7 +1287,7 @@
 	
 			$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes).addClass(inputMode);
 			$control          = $('<div>').addClass(settings.inputClass).addClass('items').appendTo($wrapper);
-			$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
+			$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').addClass(settings.inputClass + '-element').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
 			$dropdown_parent  = $(settings.dropdownParent || $wrapper);
 			$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(inputMode).hide().appendTo($dropdown_parent);
 			$dropdown_content = $('<div>').addClass(settings.dropdownContentClass).attr('tabindex', '-1').appendTo($dropdown);
@@ -1351,7 +1354,11 @@
 			});
 	
 			$control_input.on({
-				mousedown : function(e) { e.stopPropagation(); },
+				mousedown : function(e) {
+					if (self.$control_input.val() !== '' || self.settings.openOnFocus) {
+						e.stopPropagation();
+					}
+				},
 				keydown   : function() { return self.onKeyDown.apply(self, arguments); },
 				keypress  : function() { return self.onKeyPress.apply(self, arguments); },
 				input     : function() { return self.onInput.apply(self, arguments); },
@@ -1517,6 +1524,12 @@
 		onClick: function(e) {
 			var self = this;
 	
+	    // if the dropdown is closing due to a mousedown, we don't want to
+	    // refocus the element.
+	    if (self.isDropdownClosing) {
+	      return;
+	    }
+	
 			// necessary for mobile webkit devices (manual focus triggering
 			// is ignored unless invoked within a click event)
 	    // also necessary to reopen a dropdown that has been closed by
@@ -1539,26 +1552,39 @@
 			var defaultPrevented = e.isDefaultPrevented();
 			var $target = $(e.target);
 	
-			if (self.isFocused) {
-				// retain focus by preventing native handling. if the
-				// event target is the input it should not be modified.
-				// otherwise, text selection within the input won't work.
-				if (e.target !== self.$control_input[0]) {
-					if (self.settings.mode === 'single') {
-						// toggle dropdown
-						self.isOpen ? self.close() : self.open();
-					} else if (!defaultPrevented) {
-						self.setActiveItem(null);
-					}
-					return false;
-				}
-			} else {
+			if (!self.isFocused) {
 				// give control focus
 				if (!defaultPrevented) {
 					window.setTimeout(function() {
 						self.focus();
 					}, 0);
 				}
+			}
+			// retain focus by preventing native handling. if the
+			// event target is the input it should not be modified.
+			// otherwise, text selection within the input won't work.
+			if (e.target !== self.$control_input[0] || self.$control_input.val() === '') {
+				if (self.settings.mode === 'single') {
+					// toggle dropdown
+					self.isOpen ? self.close() : self.open();
+				} else {
+					if (!defaultPrevented) {
+							self.setActiveItem(null);
+					}
+					if (!self.settings.openOnFocus) {
+						if (self.isOpen && e.target === self.lastOpenTarget) {
+							self.close();
+							self.lastOpenTarget = false;
+						} else if (!self.isOpen) {
+							self.refreshOptions();
+							self.open();
+							self.lastOpenTarget = e.target;
+						} else {
+							self.lastOpenTarget = e.target;
+						}
+					}
+				}
+				return false;
 			}
 		},
 	
@@ -1966,6 +1992,11 @@
 		 * @param {mixed} value
 		 */
 		setValue: function(value, silent) {
+			const items = Array.isArray(value) ? value : [value];
+			if (items.join('') === this.items.join('')) {
+				return;
+			}
+	
 			var events = silent ? [] : ['change'];
 	
 			debounce_events(this, events, function() {
@@ -2118,6 +2149,7 @@
 	
 			self.setTextboxValue('');
 			self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : -10000});
+			self.$control.css('margin-right', self.$control_input.width() + 'px');
 			self.isInputHidden = true;
 		},
 	
@@ -2125,6 +2157,7 @@
 		 * Restores input visibility.
 		 */
 		showInput: function() {
+			this.$control.css('margin-right', '');
 			this.$control_input.css({opacity: 1, position: 'relative', left: 0});
 			this.isInputHidden = false;
 		},
@@ -2695,7 +2728,7 @@
 		 * "Selects" multiple items at once. Adds them to the list
 		 * at the current caret position.
 		 *
-		 * @param {string} value
+		 * @param {string} values
 		 * @param {boolean} silent
 		 */
 		addItems: function(values, silent) {
@@ -2894,15 +2927,15 @@
 		/**
 		 * Re-renders the selected item lists.
 		 */
-		refreshItems: function() {
+		refreshItems: function(silent) {
 			this.lastQuery = null;
 	
 			if (this.isSetup) {
-				this.addItem(this.items);
+				this.addItem(this.items, silent);
 			}
 	
 			this.refreshState();
-			this.updateOriginalInput();
+			this.updateOriginalInput({silent: silent});
 		},
 	
 		/**
@@ -3483,6 +3516,7 @@
 		showEmptyOptionInDropdown: false,
 		emptyOptionLabel: '--',
 		closeAfterSelect: false,
+	  closeDropdownThreshold: 250, // number of ms to prevent reopening of dropdown after mousedown
 	
 		scrollDuration: 60,
 		deselectBehavior: 'previous', //top, previous

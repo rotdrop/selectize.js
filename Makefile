@@ -2,11 +2,14 @@
 GULP=node_modules/.bin/gulp
 CURRENT_VERSION := $(shell sed -n '/"version":/{s/.*"version": "\([^"]*\)".*/\1/p;q}' package.json)
 version ?= $(CURRENT_VERSION) ## Version to release
+export CHROME_BIN=$(shell which chromium)
 export OPENSSL_CONF = /etc/ssl
 
 all: compile test ## (default) Run Compile and test targets
+
 test: ## runs all tests (equivalent to `npm test`)
 	npm test
+
 compile: ## compile the project, update package versions if specified, installs dependencies, and builds the project
 	npm i
 	cd docs && npm i
@@ -14,6 +17,8 @@ compile: ## compile the project, update package versions if specified, installs 
 	$(GULP) loadDependencies
 	npm run build
 	$(GULP) docs
+	find dist/ -type f -exec touch {} \;
+
 release: ## make release version=x.x.x -- commit, tag, and npm publish the specified version
 ifeq ($(strip $(version)),)
 	@echo "\033[31mERROR:\033[0;39m No version provided."

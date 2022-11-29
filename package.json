@@ -11,6 +11,7 @@
     "tag",
     "jquery-plugin"
   ],
+  "main": "dist/js/selectize.js",
   "browser": "dist/js/selectize.js",
   "description": "Selectize is a jQuery-based custom <select> UI control. Useful for tagging, contact lists, country selectors, etc.",
   "version": "0.15.2",

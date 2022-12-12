@@ -929,9 +929,9 @@ $.extend(Selectize.prototype, {
 		inputMode         = self.settings.mode;
 		classes           = $input.attr('class') || '';
 
-    $wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes + ' selectize-control').addClass(inputMode);
+		$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes + ' selectize-control').addClass(inputMode);
 		$control          = $('<div>').addClass(settings.inputClass + ' selectize-input items').appendTo($wrapper);
-		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
+		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').addClass(settings.inputClass + '-element').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
 		$dropdown_parent  = $(settings.dropdownParent || $wrapper);
 		$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(inputMode + ' selectize-dropdown').hide().appendTo($dropdown_parent);
 		$dropdown_content = $('<div>').addClass(settings.dropdownContentClass + ' selectize-dropdown-content').attr('tabindex', '-1').appendTo($dropdown);
@@ -1639,11 +1639,13 @@ $.extend(Selectize.prototype, {
 		var self = this;
 
 		self.setTextboxValue('');
-		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : 0});
+		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : -10000});
+		self.$control.css('margin-right', self.$control_input.width() + 'px');
 		self.isInputHidden = true;
 	},
 
 	showInput: function() {
+		this.$control.css('margin-right', '');
 		this.$control_input.css({opacity: 1, position: 'relative', left: 0});
 		this.isInputHidden = false;
 	},

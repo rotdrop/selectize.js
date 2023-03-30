@@ -375,6 +375,8 @@ $.extend(Selectize.prototype, {
 			'optgroup_clear'  : 'onOptionGroupClear',
 			'dropdown_open'   : 'onDropdownOpen',
 			'dropdown_close'  : 'onDropdownClose',
+			'before_dropdown_open'   : 'onBeforeDropdownOpen',
+			'before_dropdown_close'  : 'onBeforeDropdownClose',
 			'type'            : 'onType',
 			'load'            : 'onLoad',
 			'focus'           : 'onFocus',
@@ -1990,6 +1992,7 @@ $.extend(Selectize.prototype, {
       (self.settings.mode === "multi" && self.isFull())
     )
       return;
+    self.trigger('before_dropdown_open', self.$dropdown);
 		self.focus();
 		self.isOpen = true;
 		self.refreshState();
@@ -2006,6 +2009,8 @@ $.extend(Selectize.prototype, {
 	close: function() {
 		var self = this;
 		var trigger = self.isOpen;
+
+		if (trigger) self.trigger('before_dropdown_close', self.$dropdown);
 
 		if (self.settings.mode === 'single' && self.items.length) {
 			self.hideInput();

@@ -946,7 +946,7 @@ $.extend(Selectize.prototype, {
 
 		$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes + ' selectize-control').addClass(inputMode);
 		$control          = $('<div>').addClass(settings.inputClass + noArrowClass + ' selectize-input items').appendTo($wrapper);
-		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').addClass(settings.inputClass + '-element').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
+		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').addClass(settings.inputClass + '-element selectize-input-element').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
 		$dropdown_parent  = $(settings.dropdownParent || $wrapper);
 		$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(inputMode + ' selectize-dropdown').hide().appendTo($dropdown_parent);
 		$dropdown_content = $('<div>').addClass(settings.dropdownContentClass + ' selectize-dropdown-content').attr('tabindex', '-1').appendTo($dropdown);
@@ -1162,6 +1162,8 @@ $.extend(Selectize.prototype, {
 			'optgroup_clear'  : 'onOptionGroupClear',
 			'dropdown_open'   : 'onDropdownOpen',
 			'dropdown_close'  : 'onDropdownClose',
+			'before_dropdown_open'   : 'onBeforeDropdownOpen',
+			'before_dropdown_close'  : 'onBeforeDropdownClose',
 			'type'            : 'onType',
 			'load'            : 'onLoad',
 			'focus'           : 'onFocus',
@@ -2366,6 +2368,7 @@ $.extend(Selectize.prototype, {
       (self.settings.mode === "multi" && self.isFull())
     )
       return;
+    self.trigger('before_dropdown_open', self.$dropdown);
 		self.focus();
 		self.isOpen = true;
 		self.refreshState();
@@ -2379,6 +2382,8 @@ $.extend(Selectize.prototype, {
 	close: function() {
 		var self = this;
 		var trigger = self.isOpen;
+
+		if (trigger) self.trigger('before_dropdown_close', self.$dropdown);
 
 		if (self.settings.mode === 'single' && self.items.length) {
 			self.hideInput();

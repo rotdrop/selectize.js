@@ -1121,6 +1121,7 @@ $.extend(Selectize.prototype, {
 		var field_label = self.settings.labelField;
 		var field_value = self.settings.valueField;
 		var field_optgroup = self.settings.optgroupLabelField;
+		var field_tooltip = self.settings.tooltipField;
 
 		var templates = {
 			'optgroup': function(data) {
@@ -1130,14 +1131,21 @@ $.extend(Selectize.prototype, {
 				return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
 			},
 			'option': function(data, escape) {
-        var classes = data.classes ? ' ' + data.classes : '';
-        classes += data[field_value] === '' ? ' selectize-dropdown-emptyoptionlabel' : '';
-
-        var styles = data.styles ? ' style="' + data.styles +  '"': '';
-				return '<div' + styles + ' class="option' + classes + '">' + escape(data[field_label]) + '</div>';
+				var classes = data.classes ? ' ' + data.classes : '';
+				classes += data[field_value] === '' ? ' selectize-dropdown-emptyoptionlabel' : '';
+				var styles = data.styles ? ' style="' + data.styles +  '"': '';
+				if (data[field_tooltip]) {
+					return '<div' + styles + ' class="option' + classes + '" title="' + escape(data[field_tooltip]) + '">' + escape(data[field_label]) + '</div>';
+				} else {
+					return '<div' + styles + ' class="option' + classes + '">' + escape(data[field_label]) + '</div>';
+				}
 			},
 			'item': function(data, escape) {
-				return '<div class="item">' + escape(data[field_label]) + '</div>';
+				if (data[field_tooltip]) {
+					return '<div class="item" title="' + escape(data[field_tooltip]) + '">' + escape(data[field_label]) + '</div>';
+				} else  {
+					return '<div class="item">' + escape(data[field_label]) + '</div>';
+				}
 			},
 			'option_create': function(data, escape) {
 				return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&#x2026;</div>';
@@ -2799,6 +2807,7 @@ Selectize.defaults = {
   optgroupField: 'optgroup',
   valueField: 'value',
   labelField: 'text',
+  tooltipField: 'tooltip',
   disabledField: 'disabled',
   optgroupLabelField: 'label',
   optgroupValueField: 'value',
@@ -2838,6 +2847,7 @@ $.fn.selectize = function (settings_user) {
   var attr_data = settings.dataAttr;
   var field_label = settings.labelField;
   var field_value = settings.valueField;
+  var field_tooltip = settings.tooltipField;
   var field_disabled = settings.disabledField;
   var field_optgroup = settings.optgroupField;
   var field_optgroup_label = settings.optgroupLabelField;
@@ -2914,6 +2924,7 @@ $.fn.selectize = function (settings_user) {
       var option = readData($option) || {};
       option[field_value] = option[field_value] || value;
       option[field_label] = option[field_label] || $option.text() || option[field_value];
+      option[field_tooltip] = option[field_tooltip] || $option.attr('title');
       option[field_disabled] = option[field_disabled] || $option.prop('disabled');
       option[field_optgroup] = option[field_optgroup] || group;
       option.styles = $option.attr('style') || '';

@@ -36,6 +36,7 @@ Selectize.defaults = {
   optgroupField: 'optgroup',
   valueField: 'value',
   labelField: 'text',
+  tooltipField: 'tooltip',
   disabledField: 'disabled',
   optgroupLabelField: 'label',
   optgroupValueField: 'value',

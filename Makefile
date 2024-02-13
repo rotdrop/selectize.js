@@ -44,3 +44,9 @@ help: ## show this help
 	@printf "────────────────────────`tput bold``tput setaf 4` Make Variables `tput sgr0`───────────────────────────────\n"
 	@sed -ne "/@sed/!s/\(.*\)?=\(.*\)##\(.*\)/`tput setaf 4``tput bold`\1:`tput setaf 5`\2`tput sgr0`\3/p" $(MAKEFILE_LIST)
 	@printf "───────────────────────────────────────────────────────────────────────\n"
+
+clean:
+	rm -rf node_modules
+
+realclean: clean
+	rm -rf dist/*

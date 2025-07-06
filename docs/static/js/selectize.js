@@ -3,7 +3,7 @@
  * https://selectize.dev
  *
  * Copyright (c) 2013-2015 Brian Reavis & contributors
- * Copyright (c) 2020-2023 Selectize Team & contributors
+ * Copyright (c) 2020-2025 Selectize Team & contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
  * file except in compliance with the License. You may obtain a copy of the License at:
@@ -834,6 +834,12 @@ var Selectize = function($input, settings) {
 
   self.settings = {};
 
+	Selectize.instanceId = Selectize.instanceId || 0;
+	Selectize.instanceCount = Selectize.instanceCount || 0;
+
+	++Selectize.instanceId; 
+	++Selectize.instanceCount; 
+
 	$.extend(self, {
 		order            : 0,
 		settings         : settings,
@@ -842,7 +848,7 @@ var Selectize = function($input, settings) {
 		tagType          : input.tagName.toLowerCase() === 'select' ? TAG_SELECT : TAG_INPUT,
 		rtl              : /rtl/i.test(dir),
 
-		eventNS          : '.selectize' + (++Selectize.count),
+		eventNS          : '.selectize' + Selectize.instanceId,
 		highlightedValue : null,
 		isBlurring       : false,
 		isOpen           : false,
@@ -938,9 +944,9 @@ $.extend(Selectize.prototype, {
     classes           = $input.attr('class') || '';
     noArrowClass      = settings.showArrow ? '' : ' no-arrow';
 
-    $wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes + ' selectize-control').addClass(inputMode);
+		$wrapper          = $('<div>').addClass(settings.wrapperClass).addClass(classes + ' selectize-control').addClass(inputMode);
 		$control          = $('<div>').addClass(settings.inputClass + noArrowClass + ' selectize-input items').appendTo($wrapper);
-		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
+		$control_input    = $('<input type="text" autocomplete="new-password" autofill="no" />').addClass(settings.inputClass + '-element selectize-input-element').appendTo($control).attr('tabindex', $input.is(':disabled') ? '-1' : self.tabIndex);
 		$dropdown_parent  = $(settings.dropdownParent || $wrapper);
 		$dropdown         = $('<div>').addClass(settings.dropdownClass).addClass(inputMode + ' selectize-dropdown').hide().appendTo($dropdown_parent);
 		$dropdown_content = $('<div>').addClass(settings.dropdownContentClass + ' selectize-dropdown-content').attr('tabindex', '-1').appendTo($dropdown);
@@ -1115,6 +1121,7 @@ $.extend(Selectize.prototype, {
 		var field_label = self.settings.labelField;
 		var field_value = self.settings.valueField;
 		var field_optgroup = self.settings.optgroupLabelField;
+		var field_tooltip = self.settings.tooltipField;
 
 		var templates = {
 			'optgroup': function(data) {
@@ -1124,14 +1131,21 @@ $.extend(Selectize.prototype, {
 				return '<div class="optgroup-header">' + escape(data[field_optgroup]) + '</div>';
 			},
 			'option': function(data, escape) {
-        var classes = data.classes ? ' ' + data.classes : '';
-        classes += data[field_value] === '' ? ' selectize-dropdown-emptyoptionlabel' : '';
-
-        var styles = data.styles ? ' style="' + data.styles +  '"': '';
-				return '<div' + styles + ' class="option' + classes + '">' + escape(data[field_label]) + '</div>';
+				var classes = data.classes ? ' ' + data.classes : '';
+				classes += data[field_value] === '' ? ' selectize-dropdown-emptyoptionlabel' : '';
+				var styles = data.styles ? ' style="' + data.styles +  '"': '';
+				if (data[field_tooltip]) {
+					return '<div' + styles + ' class="option' + classes + '" title="' + escape(data[field_tooltip]) + '">' + escape(data[field_label]) + '</div>';
+				} else {
+					return '<div' + styles + ' class="option' + classes + '">' + escape(data[field_label]) + '</div>';
+				}
 			},
 			'item': function(data, escape) {
-				return '<div class="item">' + escape(data[field_label]) + '</div>';
+				if (data[field_tooltip]) {
+					return '<div class="item" title="' + escape(data[field_tooltip]) + '">' + escape(data[field_label]) + '</div>';
+				} else  {
+					return '<div class="item">' + escape(data[field_label]) + '</div>';
+				}
 			},
 			'option_create': function(data, escape) {
 				return '<div class="create">Add <strong>' + escape(data.input) + '</strong>&#x2026;</div>';
@@ -1156,6 +1170,8 @@ $.extend(Selectize.prototype, {
 			'optgroup_clear'  : 'onOptionGroupClear',
 			'dropdown_open'   : 'onDropdownOpen',
 			'dropdown_close'  : 'onDropdownClose',
+			'before_dropdown_open'   : 'onBeforeDropdownOpen',
+			'before_dropdown_close'  : 'onBeforeDropdownClose',
 			'type'            : 'onType',
 			'load'            : 'onLoad',
 			'focus'           : 'onFocus',
@@ -1189,6 +1205,10 @@ $.extend(Selectize.prototype, {
 		var self = this;
 		var defaultPrevented = e.isDefaultPrevented();
 		var $target = $(e.target);
+
+		if (e.button && e.button === 2) {
+			return;
+		}
 
 		if (!self.isFocused) {
 			if (!defaultPrevented) {
@@ -1444,6 +1464,10 @@ $.extend(Selectize.prototype, {
 			e.stopPropagation();
 		}
 
+		if (e.button && e.button === 2) {
+			return;
+		}
+
 		$target = $(e.currentTarget);
 		if ($target.hasClass('create')) {
 			self.createItem(null, function() {
@@ -1644,11 +1668,13 @@ $.extend(Selectize.prototype, {
 		var self = this;
 
 		self.setTextboxValue('');
-		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : 0});
+		self.$control_input.css({opacity: 0, position: 'absolute', left: self.rtl ? 10000 : -10000});
+		self.$control.css('margin-right', self.$control_input.width() + 'px');
 		self.isInputHidden = true;
 	},
 
 	showInput: function() {
+		this.$control.css('margin-right', '');
 		this.$control_input.css({opacity: 1, position: 'relative', left: 0});
 		this.isInputHidden = false;
 	},
@@ -2350,6 +2376,7 @@ $.extend(Selectize.prototype, {
       (self.settings.mode === "multi" && self.isFull())
     )
       return;
+    self.trigger('before_dropdown_open', self.$dropdown);
 		self.focus();
 		self.isOpen = true;
 		self.refreshState();
@@ -2363,6 +2390,8 @@ $.extend(Selectize.prototype, {
 	close: function() {
 		var self = this;
 		var trigger = self.isOpen;
+
+		if (trigger) self.trigger('before_dropdown_close', self.$dropdown);
 
 		if (self.settings.mode === 'single' && self.items.length) {
 			self.hideInput();
@@ -2662,7 +2691,7 @@ $.extend(Selectize.prototype, {
 		self.$control_input.removeData('grow');
 		self.$input.removeData('selectize');
 
-		if (--Selectize.count == 0 && Selectize.$testInput) {
+		if (--Selectize.instanceCount === 0 && Selectize.$testInput) {
 			Selectize.$testInput.remove();
 			Selectize.$testInput = undefined;
 		}
@@ -2778,6 +2807,7 @@ Selectize.defaults = {
   optgroupField: 'optgroup',
   valueField: 'value',
   labelField: 'text',
+  tooltipField: 'tooltip',
   disabledField: 'disabled',
   optgroupLabelField: 'label',
   optgroupValueField: 'value',
@@ -2817,6 +2847,7 @@ $.fn.selectize = function (settings_user) {
   var attr_data = settings.dataAttr;
   var field_label = settings.labelField;
   var field_value = settings.valueField;
+  var field_tooltip = settings.tooltipField;
   var field_disabled = settings.disabledField;
   var field_optgroup = settings.optgroupField;
   var field_optgroup_label = settings.optgroupLabelField;
@@ -2891,8 +2922,9 @@ $.fn.selectize = function (settings_user) {
       }
 
       var option = readData($option) || {};
-      option[field_label] = option[field_label] || $option.text();
       option[field_value] = option[field_value] || value;
+      option[field_label] = option[field_label] || $option.text() || option[field_value];
+      option[field_tooltip] = option[field_tooltip] || $option.attr('title');
       option[field_disabled] = option[field_disabled] || $option.prop('disabled');
       option[field_optgroup] = option[field_optgroup] || group;
       option.styles = $option.attr('style') || '';

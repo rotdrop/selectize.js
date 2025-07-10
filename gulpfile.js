@@ -151,12 +151,6 @@ const amd_footer = `
 async function _copyLibs() {
   'use strict';
 
-  src(['node_modules/bootstrap2/less/**/**.*']).pipe(dest('lib/bootstrap2'));
-  src(['node_modules/bootstrap3/less/**/**.*']).pipe(dest('lib/bootstrap3'));
-  src(['node_modules/bootstrap4/scss/**/**.*'])
-    .pipe(__fixScssDeprecations())
-    .pipe(dest('lib/bootstrap4'));
-
   src(['node_modules/bootstrap5/scss/**/**.*'])
     .pipe(__fixScssDeprecations())
     .pipe(dest('lib/bootstrap5'));
@@ -215,11 +209,6 @@ const _compileLess = async () => {
     }
   });
 
-  src(['src/less/selectize.bootstrap2.less', ...plugin_styles])
-    .pipe(concat('selectize.bootstrap2.css'))
-    .pipe(less({ paths: ['lib', 'src/less'], math: 'always' }))
-    .pipe(__wrapStyles())
-    .pipe(dest('dist/css'));
 }
 
 const _compileSass = async () => {
@@ -251,7 +240,7 @@ const _compileSass = async () => {
     .pipe(dest('dist/css'));
 
   // build the bootstrap base sccss styles
-  for (let bs_version = 3; bs_version <= 5; bs_version++) {
+  for (let bs_version = 5; bs_version <= 5; bs_version++) {
     src(['src/scss/selectize.bootstrap' + bs_version + '.scss', ...plugin_styles])
       .pipe(concat('selectize.bootstrap' + bs_version + '.css'))
       .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))

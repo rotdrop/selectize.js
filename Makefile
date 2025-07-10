@@ -50,3 +50,4 @@ clean:
 
 realclean: clean
 	rm -rf dist/*
+	rm -rf lib/*

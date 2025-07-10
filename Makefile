@@ -49,6 +49,7 @@ clean:
 	rm -rf node_modules
 
 realclean: clean
+	rm -rf build/*
 	rm -rf dist/*
 	rm -rf lib/*
 	rm -f package-lock.json

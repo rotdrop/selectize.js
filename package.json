@@ -30,7 +30,6 @@
   "devDependencies": {
     "@risadams/gulp-wrapper": "1.0.0",
     "@types/jquery": "^3.5.16",
-    "bootstrap-sass": "^3.4.3",
     "bootstrap": "^5.0.0",
     "chai": "4.3.7",
     "concurrently": "7.6.0",

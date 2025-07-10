@@ -154,8 +154,6 @@ async function _copyLibs() {
   src(['node_modules/bootstrap/scss/**/**.*'])
     .pipe(__fixScssDeprecations())
     .pipe(dest('lib/bootstrap'));
-
-  src(['node_modules/bootstrap-sass/assets/stylesheets/bootstrap/**/**.*']).pipe(dest('lib/bootstrap-sass'));
 }
 
 

@@ -151,9 +151,9 @@ const amd_footer = `
 async function _copyLibs() {
   'use strict';
 
-  src(['node_modules/bootstrap5/scss/**/**.*'])
+  src(['node_modules/bootstrap/scss/**/**.*'])
     .pipe(__fixScssDeprecations())
-    .pipe(dest('lib/bootstrap5'));
+    .pipe(dest('lib/bootstrap'));
 
   src(['node_modules/bootstrap-sass/assets/stylesheets/bootstrap/**/**.*']).pipe(dest('lib/bootstrap-sass'));
 }
@@ -240,13 +240,11 @@ const _compileSass = async () => {
     .pipe(dest('dist/css'));
 
   // build the bootstrap base sccss styles
-  for (let bs_version = 5; bs_version <= 5; bs_version++) {
-    src(['src/scss/selectize.bootstrap' + bs_version + '.scss', ...plugin_styles])
-      .pipe(concat('selectize.bootstrap' + bs_version + '.css'))
-      .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))
-      .pipe(__wrapStyles())
-      .pipe(dest('dist/css'));
-  }
+  src(['src/scss/selectize.bootstrap.scss', ...plugin_styles])
+    .pipe(concat('selectize.bootstrap.css'))
+    .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))
+    .pipe(__wrapStyles())
+    .pipe(dest('dist/css'));
 }
 
 const _compileJavascript = async (scripts) =>

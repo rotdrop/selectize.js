@@ -51,3 +51,4 @@ clean:
 realclean: clean
 	rm -rf dist/*
 	rm -rf lib/*
+	rm -f package-lock.json

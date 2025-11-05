@@ -385,6 +385,7 @@ $.extend(Selectize.prototype, {
 			'dropdown_close'  : 'onDropdownClose',
 			'before_dropdown_open'   : 'onBeforeDropdownOpen',
 			'before_dropdown_close'  : 'onBeforeDropdownClose',
+			'options_refresh'	:	'onOptionsRefresh',
 			'type'            : 'onType',
 			'load'            : 'onLoad',
 			'focus'           : 'onFocus',
@@ -1304,6 +1305,8 @@ $.extend(Selectize.prototype, {
 
 		// activate
 		self.hasOptions = results.items.length > 0 || ( has_create_option && self.settings.showAddOptionOnCreate ) || self.settings.setFirstOptionActive;
+
+		self.trigger('options_refresh', self.$dropdown);
 
 		if (self.hasOptions) {
       		if (results.items.length > 0) {

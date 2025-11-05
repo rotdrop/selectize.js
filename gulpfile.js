@@ -201,20 +201,29 @@ const _compileSass = async () => {
 
   src(['src/scss/selectize.scss', ...plugin_styles])
     .pipe(concat('selectize.css'))
-    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
+    .pipe(sass({
+      includePaths: ['node_modules', 'src/scss'],
+      silenceDeprecations: ['legacy-js-api', 'mixed-decls', 'color-functions', 'global-builtin', 'import'],
+    }).on('error', sass.logError))
     .pipe(__wrapStyles())
     .pipe(dest('dist/css'));
 
   src(['src/scss/selectize.default.scss', ...plugin_styles])
     .pipe(concat('selectize.default.css'))
-    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
+    .pipe(sass({
+      includePaths: ['node_modules', 'src/scss'],
+      silenceDeprecations: ['legacy-js-api', 'mixed-decls', 'color-functions', 'global-builtin', 'import'],
+    }).on('error', sass.logError))
     .pipe(__wrapStyles())
     .pipe(dest('dist/css'));
 
   // build the bootstrap base sccss styles
   src(['src/scss/selectize.bootstrap.scss', ...plugin_styles])
     .pipe(concat('selectize.bootstrap.css'))
-    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
+    .pipe(sass({
+      includePaths: ['node_modules', 'src/scss'],
+      silenceDeprecations: ['legacy-js-api', 'mixed-decls', 'color-functions', 'global-builtin', 'import'],
+    }).on('error', sass.logError))
     .pipe(__wrapStyles())
     .pipe(dest('dist/css'));
 }

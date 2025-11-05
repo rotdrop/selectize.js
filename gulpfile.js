@@ -25,8 +25,8 @@ const { src, dest, series, watch, parallel } = require('gulp');
 // Internal task definitions
 // ----------------------------------------
 const cleanLibs = async () => del('dist/**/*');
-const loadDependencies = async () => await _copyLibs();
-const copyDependencies = async () => src(['lib/**/*']).pipe(dest('dist/lib'));
+const loadDependencies = async () => true;
+const copyDependencies = async () => true;
 const copySrc = async () => {
 
   let scripts = [
@@ -77,9 +77,6 @@ description: API Reference for ${basename}
           "global-index-format": "none",
           "module-index-format": "none",
         });
-
-
-
 
         const sanatizedData = toAdd + data;
         fs.writeFileSync(output, sanatizedData);
@@ -148,37 +145,6 @@ const amd_footer = `
 }));
 `
 
-async function _copyLibs() {
-  'use strict';
-
-  src(['node_modules/bootstrap2/less/**/**.*']).pipe(dest('lib/bootstrap2'));
-  src(['node_modules/bootstrap3/less/**/**.*']).pipe(dest('lib/bootstrap3'));
-  src(['node_modules/bootstrap4/scss/**/**.*'])
-    .pipe(__fixScssDeprecations())
-    .pipe(dest('lib/bootstrap4'));
-
-  src(['node_modules/bootstrap5/scss/**/**.*'])
-    .pipe(__fixScssDeprecations())
-    .pipe(dest('lib/bootstrap5'));
-
-  src(['node_modules/bootstrap-sass/assets/stylesheets/bootstrap/**/**.*']).pipe(dest('lib/bootstrap-sass'));
-}
-
-
-
-// ----------------------------------------
-// re-usable pipelines
-const __fixScssDeprecations = lazypipe()
-  .pipe(replace, /\$spacer \/ 2/g, 'calc($spacer /2)')
-  .pipe(replace, /\$input-padding-y \/ 2/g, 'calc($input-padding-y / 2)')
-  .pipe(replace, /\$custom-control-indicator-size \/ 2/g, 'calc($custom-control-indicator-size / 2)')
-  .pipe(replace, /\$grid-gutter-width \/ 2/g, 'calc($grid-gutter-width / 2)')
-  .pipe(replace, /1 \/ \$rfs-rem-value/g, 'calc(1 / $rfs-rem-value)')
-  .pipe(replace, /\$rfs-breakpoint \/ \(\$rfs-breakpoint \* 0 \+ 1\)/g, 'calc($rfs-breakpoint / ($rfs-breakpoint * 0 + 1px))')
-  .pipe(replace, /\(\$nav-link-height - \$navbar-brand-height\) \/ 2/g, 'calc(($nav-link-height - $navbar-brand-height))')
-  .pipe(replace, /\$rfs-base-font-size \/ \(\$rfs-base-font-size \* 0 \+ calc\(1 \/ \$rfs-rem-value\)\)/g, 'calc($rfs-base-font-size / ($rfs-base-font-size * 0 + calc(1px / $rfs-rem-value)))')
-  ;
-
 const __wrapScripts = lazypipe()
   .pipe(wrapper, {
     header: amd_header,
@@ -191,7 +157,7 @@ const __wrapScripts = lazypipe()
   ;
 
 const __wrapStyles = lazypipe()
-  .pipe(uglifycss)
+//  .pipe(uglifycss)
   .pipe(wrapper, { header: license_header })
   .pipe(replace, /@@YEAR/g, getYear())
   .pipe(replace, /@@version/g, getVersion())
@@ -215,11 +181,6 @@ const _compileLess = async () => {
     }
   });
 
-  src(['src/less/selectize.bootstrap2.less', ...plugin_styles])
-    .pipe(concat('selectize.bootstrap2.css'))
-    .pipe(less({ paths: ['lib', 'src/less'], math: 'always' }))
-    .pipe(__wrapStyles())
-    .pipe(dest('dist/css'));
 }
 
 const _compileSass = async () => {
@@ -240,24 +201,22 @@ const _compileSass = async () => {
 
   src(['src/scss/selectize.scss', ...plugin_styles])
     .pipe(concat('selectize.css'))
-    .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))
+    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
     .pipe(__wrapStyles())
     .pipe(dest('dist/css'));
 
   src(['src/scss/selectize.default.scss', ...plugin_styles])
     .pipe(concat('selectize.default.css'))
-    .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))
+    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
     .pipe(__wrapStyles())
     .pipe(dest('dist/css'));
 
   // build the bootstrap base sccss styles
-  for (let bs_version = 3; bs_version <= 5; bs_version++) {
-    src(['src/scss/selectize.bootstrap' + bs_version + '.scss', ...plugin_styles])
-      .pipe(concat('selectize.bootstrap' + bs_version + '.css'))
-      .pipe(sass({ includePaths: ['lib', 'src/scss'], }).on('error', sass.logError))
-      .pipe(__wrapStyles())
-      .pipe(dest('dist/css'));
-  }
+  src(['src/scss/selectize.bootstrap.scss', ...plugin_styles])
+    .pipe(concat('selectize.bootstrap.css'))
+    .pipe(sass({ includePaths: ['node_modules', 'src/scss'], }).on('error', sass.logError))
+    .pipe(__wrapStyles())
+    .pipe(dest('dist/css'));
 }
 
 const _compileJavascript = async (scripts) =>

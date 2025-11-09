@@ -398,6 +398,8 @@ $.extend(Selectize.prototype, {
     // if the dropdown is closing due to a mousedown, we don't want to
     // refocus the element.
     if (self.isDropdownClosing) {
+			clearTimeout(self.isDropdownClosing);
+			self.isDropdownClosing = false;
       return;
     }
 
@@ -445,6 +447,14 @@ $.extend(Selectize.prototype, {
 			if (self.settings.mode === 'single') {
 				// toggle dropdown
 				self.isOpen ? self.close() : self.open();
+
+				// when closing the dropdown, we set a isDropdownClosing
+				// varible temporaily to prevent the dropdown from reopening
+				// from the onClick event
+				self.isDropdownClosing = setTimeout(function() {
+					self.isDropdownClosing = false;
+				}, self.settings.closeDropdownThreshold);
+
 			} else {
 				if (!defaultPrevented) {
 						self.setActiveItem(null);

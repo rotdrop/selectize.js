@@ -208,17 +208,17 @@ $.extend(Selectize.prototype, {
 		$dropdown.on('mouseenter mousedown mouseup click', '[data-disabled]>[data-selectable]', function(e) { e.stopImmediatePropagation(); });
 		$dropdown.on('mouseenter', '[data-selectable]', function() { return self.onOptionHover.apply(self, arguments); });
 		$dropdown.on('mouseup click', '[data-selectable]', function() { return self.onOptionSelect.apply(self, arguments); });
-		watchChildEvent($control, 'mouseup', '*:not(input)', function() { return self.onItemSelect.apply(self, arguments); });
+    $wrapper.on('mouseup', '.selectize-input.items > *:not(input)', function() { return self.onItemSelect.apply(self, arguments); });
 		autoGrow($control_input);
 
-		$control.on({
+		$wrapper.on({
 			mousedown : function() { return self.onMouseDown.apply(self, arguments); },
 			click     : function() { return self.onClick.apply(self, arguments); }
 		});
 
 		$control_input.on({
 			mousedown : function(e) {
-				if (self.$control_input.val() !== '' || self.settings.openOnFocus) {
+				if (self.$control_input.val() !== '' /* || self.settings.openOnFocus */) {
 					e.stopPropagation();
 				}
 			},
@@ -449,12 +449,11 @@ $.extend(Selectize.prototype, {
           }
         }, 0);
 			}
-		}
-		// retain focus by preventing native handling. if the
-		// event target is the input it should not be modified.
-		// otherwise, text selection within the input won't work.
-		if ($target !== self.$control_input[0] || self.$control_input.val() === '') {
-			if (self.settings.mode === 'single') {
+		} else if ($target !== self.$control_input[0] || self.$control_input.val() === '') {
+			// retain focus by preventing native handling. if the
+			// event target is the input it should not be modified.
+			// otherwise, text selection within the input won't work.
+			if ((self.settings.mode === 'single' || !self.settings.openOnFocus) && !$target.closest('.selectize-dropdown').length === 1) {
 				// toggle dropdown
 				self.isOpen ? self.close() : self.open();
 
@@ -464,23 +463,9 @@ $.extend(Selectize.prototype, {
 				self.isDropdownClosing = setTimeout(function() {
 					self.isDropdownClosing = false;
 				}, self.settings.closeDropdownThreshold);
-
-			} else {
-				if (!defaultPrevented) {
-						self.setActiveItem(null);
-				}
-				if (!self.settings.openOnFocus) {
-					if (self.isOpen && $target === self.lastOpenTarget) {
-						self.close();
-						self.lastOpenTarget = false;
-					} else if (!self.isOpen) {
-						self.refreshOptions();
-						self.open();
-						self.lastOpenTarget = $target;
-					} else {
-						self.lastOpenTarget = $target;
-					}
-				}
+			}
+			if (!self.settings.mode === 'single' && !defaultPrevented) {
+				self.setActiveItem(null);
 			}
 			return false;
 		}
@@ -693,7 +678,9 @@ $.extend(Selectize.prototype, {
 			return false;
 		}
 
-		if (self.ignoreFocus) return;
+		if (self.ignoreFocus) {
+			return;
+		}
 		self.isFocused = true;
 		if (self.settings.preload === 'focus') self.onSearchChange('');
 
@@ -2505,4 +2492,4 @@ $.extend(Selectize.prototype, {
 			&& (typeof filter !== 'string' || new RegExp(filter).test(input))
 			&& (!(filter instanceof RegExp) || filter.test(input));
 	}
-});
+	});

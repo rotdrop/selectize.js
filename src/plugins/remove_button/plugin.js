@@ -63,15 +63,23 @@ Selectize.define('remove_button', function (options) {
 
 					original.apply(thisRef, arguments);
 
-					// add event listener
+					// add event listeners
+					thisRef.$control.on('mousedown mouseup', '.' + options.className, function(e) {
+						e.preventDefault();
+						return false;
+					});
 					thisRef.$control.on('click', '.' + options.className, function(e) {
 						e.preventDefault();
 						if (self.isLocked) return;
 
 						var $item = $(e.currentTarget).parent();
-						self.setActiveItem($item);
-						if (self.deleteSelection()) {
-							self.setCaret(self.items.length);
+						if (self.isOpen) {
+							self.setActiveItem($item);
+							if (self.deleteSelection()) {
+								self.setCaret(self.items.length);
+							}
+						} else {
+							self.removeItem($item.attr('data-value'));
 						}
 						return false;
 					});

@@ -7,3 +7,9 @@ bower_components
 build
 coverage/
 _site/
+docs/static/css
+docs/static/js
+dist
+lib
+package-lock.json
+**/package-lock.json

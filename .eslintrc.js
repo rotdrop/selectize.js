@@ -1,10 +1,6 @@
 module.exports = {
 	rules: {
 		indent: ['error', 'tab'],
+    'no-tabs': ['error', { allowIndentationTabs: true }],
 	},
 };
-
-// Local Variables: ***
-// js-indent-level: 8 ***
-// indent-tabs-mode: t ***
-// End: ***

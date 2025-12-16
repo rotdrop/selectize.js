@@ -84,5 +84,9 @@
   },
   "engines": {
     "node": "*"
+  },
+  "jshintConfig": {
+		"camelcase": false,
+		"-W014": true
   }
 }

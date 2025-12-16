@@ -84,11 +84,13 @@
 			it('should start loading results if preload:"focus"', function(done) {
 				var calls_focus = 0;
 				var calls_load = 0;
+				var loadThrottle = 300;
 				var test = setup_test('<select>' +
 					'<option value="a">A</option>' +
 					'<option value="b">B</option>' +
 				'</select>', {
 					preload: 'focus',
+					loadThrottle: loadThrottle,
 					load: function(query, done) {
 						calls_load++;
 						assert.equal(query, '');
@@ -106,7 +108,7 @@
 						assert.equal(calls_focus, 1);
 						assert.equal(calls_load, 1);
 						done();
-					}, 300);
+					}, 2 * loadThrottle);
 				});
 			});
 

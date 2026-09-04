@@ -167,7 +167,7 @@ $.extend(Selectize.prototype, {
 		}
 
 		if ((settings.maxItems === null || settings.maxItems > 1) && self.tagType === TAG_SELECT) {
-			$input.attr('multiple', 'multiple');
+			$input.prop('multiple', true);
 		}
 
 		if (self.settings.placeholder) {
@@ -878,7 +878,7 @@ $.extend(Selectize.prototype, {
 	 * @returns {mixed}
 	 */
 	getValue: function() {
-		if (this.tagType === TAG_SELECT && this.$input.attr('multiple')) {
+		if (this.tagType === TAG_SELECT && this.$input.prop('multiple')) {
 			return this.items;
 		} else {
 			return this.items.join(this.settings.delimiter);
@@ -1962,7 +1962,7 @@ $.extend(Selectize.prototype, {
 				return 'option[value="' + escape_html(value) + '"]';
 			});
 
-			if (existing.length - old.length + fresh.length === 0 && !self.$input.attr('multiple')) {
+			if (existing.length - old.length + fresh.length === 0 && !self.$input.prop('multiple')) {
 				fresh.push('<option value="" selected="selected"></option>');
 			}
 

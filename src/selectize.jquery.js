@@ -131,7 +131,7 @@ $.fn.selectize = function (settings_user) {
       }
     };
 
-    settings_element.maxItems = $input.attr('multiple') ? null : 1;
+    settings_element.maxItems = $input.prop('multiple') ? null : 1;
 
     $children = $input.children();
     for (i = 0, n = $children.length; i < n; i++) {

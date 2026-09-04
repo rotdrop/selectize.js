@@ -5,10 +5,10 @@
 
 /// <reference types="jquery"/>
 
-export declare namespace Selectize {
+declare module 'selectize' {
     // see https://github.com/selectize/selectize.js/blob/master/docs/usage.md
     // option identifiers are parameterized by T; data is parameterized by U
-    interface IOptions<T, U> {
+    export interface IOptions<T, U> {
 
         // General
         // ------------------------------------------------------------------------------------------------------------
@@ -397,7 +397,7 @@ export declare namespace Selectize {
      * HTML (string) with a single root element. The "escape" argument is a function that takes a string and
      * escapes all special HTML characters. This is very important to use to prevent XSS vulnerabilities.
      */
-    interface ICustomRenderers<U> {
+    export interface ICustomRenderers<U> {
         // An option in the dropdown list of available options.
         option?(data: U, escape: (input: string) => string): string;
 
@@ -417,7 +417,36 @@ export declare namespace Selectize {
     }
 
     // see https://github.com/selectize/selectize.js/blob/master/docs/api.md
-    interface IApi<T, U> {
+    declare class Selectize<E extends HTMLElement, T, U> {
+
+        /**
+         * The original input element the control was created from.
+         */
+        $input: JQuery<E>;
+
+        $wrapper: JQuery;
+
+        /**
+         * The settings the control was initialized with, merged with the defaults.
+         */
+        settings: IOptions<T, U>;
+
+        /**
+         * An array of selected values.
+         */
+        items: T[];
+
+        /**
+         * An object containing the entire pool of options. The object is keyed by each object's value.
+         */
+        options: { [value: string]: U };
+
+        revertSettings: {
+            $children: JQuery;
+        };
+        settings_user: Record<string, string>;
+        isDisabled: boolean;
+        isLocked: boolean;
 
         // Dropdown Options
         // ------------------------------------------------------------------------------------------------------------
@@ -619,19 +648,21 @@ export declare namespace Selectize {
          * When the `settings.placeholder` value is changed, the new placeholder will be displayed.
          */
         updatePlaceholder(): void;
+
+        registerOptionGroup(arg: { $order: number; label: string; value: string; disable: boolean }): void;
     }
 
-    interface ISearchToken {
+    export interface ISearchToken {
         regex: RegExp;
         string: string;
     }
 
-    interface ISearchResult {
+    export interface ISearchResult {
         id: string;
         score: number;
     }
 
-    interface ISearch {
+    export interface ISearch {
         /**
          * Original search options.
          */
@@ -657,13 +688,24 @@ export declare namespace Selectize {
          */
         items: ISearchResult[];
     }
+
+    export type IApi<T, U> = Selectize<T, U>;
+
+    export default Selectize;
 }
 
-interface JQuery {
-    selectize(options?: Selectize.IOptions<any, any>): JQuery;
+import { IApi } from 'selectize';
+
+declare global {
+    interface HTMLElement {
+        selectize?: IApi;
+    }
 }
 
-interface HTMLElement {
-    selectize: Selectize.IApi<any, any>;
+declare global {
+    interface JQuery<TElement = HTMLElement> {
+        selectize<T, U>(options?: Selectize.IOptions<T, U>): JQuery<TElement>;
+    }
 }
 
+export {};

@@ -8,7 +8,7 @@
 declare module 'selectize' {
     // see https://github.com/selectize/selectize.js/blob/master/docs/usage.md
     // option identifiers are parameterized by T; data is parameterized by U
-    export interface IOptions<T, U> {
+    export interface IOptions<T = string, U = { input: string }> {
 
         // General
         // ------------------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ declare module 'selectize' {
          *
          * Default: false
          */
-        create?: any;
+      create?: boolean|(<E extends HTMLElement = HTMLElement>(this: SelectizeControl<E, T, U>, input: T, setterCallback: (arg: boolean|unknown) => void) => void);
 
         /**
          * If true, when user exits the field (clicks outside of input or presses ESC) new option is created and
@@ -176,6 +176,8 @@ declare module 'selectize' {
          */
         dataAttr?: string;
 
+        lockOptgroupOrder?: boolean;
+
         /**
          * The name of the property to use as the "value" when an item is selected.
          *
@@ -286,7 +288,7 @@ declare module 'selectize' {
         /**
          * Invoked once the control is completely initialized.
          */
-        onInitialize?(): any;
+        onInitialize?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>): any;
 
         /**
          * Invoked when the value of the control changes.
@@ -294,7 +296,7 @@ declare module 'selectize' {
          * If single select, value is of type T.
          * If multi select, value is of type T[].
          */
-        onChange?(value: any): any;
+        onChange?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, value: any): any;
 
         /**
          * Invoked when an item is selected.
@@ -309,7 +311,7 @@ declare module 'selectize' {
         /**
          * Invoked when the control is manually cleared via the clear() method.
          */
-        onClear?(): any;
+        onClear?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>): any;
 
         /**
          * Invoked when the user attempts to delete the current selection.
@@ -319,22 +321,24 @@ declare module 'selectize' {
         /**
          * Invoked when a new option is added to the available options list.
          */
-        onOptionAdd?(value: T, data: U): any;
+        onOptionAdd?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, value: T, data: U): any;
 
         /**
          * Invoked when an option is removed from the available options.
          */
         onOptionRemove?(value: T): any;
 
+        onBeforeDropdownOpen?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, $dropdown: JQuery): void;
+
         /**
          * Invoked when the dropdown opens.
          */
-        onDropdownOpen?(dropdown: JQuery): any;
+        onDropdownOpen?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, $dropdown: JQuery): void;
 
         /**
          * Invoked when the dropdown closes.
          */
-        onDropdownClose?(dropdown: JQuery): any;
+        onDropdownClose?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, dropdown: JQuery): any;
 
         /**
          * Invoked when the user types while filtering options.
@@ -345,6 +349,8 @@ declare module 'selectize' {
          * Invoked when new options have been loaded and added to the control (via the "load" option or "load" API method).
          */
         onLoad?(data: U[]): any;
+
+        onOptionsRefresh?<E extends HTMLElement = HTMLElement>(this: Selectize<E, T, U>, $dropdown: JQuery): void;
 
         // Rendering
         // ------------------------------------------------------------------------------------------------------------
@@ -358,6 +364,7 @@ declare module 'selectize' {
         inputClass?: string;
         dropdownClass?: string;
         dropdownContentClass?: string;
+        closeAfterSelect: boolean;
 
         /**
          * Setup the dropdown size to auto / number of visible items or a fixed height
@@ -417,7 +424,7 @@ declare module 'selectize' {
     }
 
     // see https://github.com/selectize/selectize.js/blob/master/docs/api.md
-    declare class Selectize<E extends HTMLElement, T, U> {
+    declare class Selectize<E extends HTMLElement = HTMLElement, T = string, U = { input: string }> {
 
         /**
          * The original input element the control was created from.
@@ -689,12 +696,12 @@ declare module 'selectize' {
         items: ISearchResult[];
     }
 
-    export type IApi<T, U> = Selectize<T, U>;
+    export type IApi<T, U> = Selectize<HTMLElement, T, U>;
 
     export default Selectize;
 }
 
-import { IApi } from 'selectize';
+import { IApi, IOptions } from 'selectize';
 
 declare global {
     interface HTMLElement {
@@ -704,7 +711,7 @@ declare global {
 
 declare global {
     interface JQuery<TElement = HTMLElement> {
-        selectize<T, U>(options?: Selectize.IOptions<T, U>): JQuery<TElement>;
+        selectize<T = string, U = { input: string }>(options?: Partial<IOptions<T, U>>): JQuery<TElement>;
     }
 }
 
